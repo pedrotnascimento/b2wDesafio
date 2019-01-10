@@ -6,6 +6,7 @@ from starwars.views import PlanetTransformData
 import json
 
 URL = '/planets/'
+URL_ONE_TEMPL = URL + '{id}/'
 
 
 class PlanetModelTests(APITestCase):
@@ -29,20 +30,19 @@ class PlanetModelTests(APITestCase):
 
         # modify(add, change) data comming from the database
         planetAux = PlanetTransformData()
-        for i in range(len(serializer.data)):
-            aux_dict = serializer.data[i]
+        for i, aux_dict in enumerate(serializer.data):
             serializer.data[i] = planetAux.transform(aux_dict)
 
         self.assertEqual(response.data, serializer.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_get_one_planet(self):
-        response = self.client.get(URL + str(self.alderaan.id) + "/")
+        response = self.client.get(URL_ONE_TEMPL.format(self.alderaan.id))
         self.assertEqual(response.data["id"], self.alderaan.id)
 
     def test_inexist_planet(self):
         fake_ID = "999"
-        response = self.client.get(URL + fake_ID + "/")
+        response = self.client.get(URL_ONE_TEMPL.format(fake_ID))
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
@@ -94,14 +94,14 @@ class UpdatePlanetTest(APITestCase):
         }
 
     def test_valid_update_planet(self):
-        response = self.client.put(URL + str(self.planetTest.id) + "/",
+        response = self.client.put(URL_ONE_TEMPL.format(self.planetTest.id),
                                    data=json.dumps(self.valid_instance),
                                    content_type='application/json'
                                    )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_invalid_update_planet(self):
-        response = self.client.put(URL + str(self.planetTest.id) + "/",
+        response = self.client.put(URL_ONE_TEMPL.format(self.planetTest.id),
                                    data=json.dumps(self.invalid_instance),
                                    content_type='application/json'
                                    )
@@ -109,7 +109,7 @@ class UpdatePlanetTest(APITestCase):
 
     def test_inexist_update_planet(self):
         fake_ID = "999"
-        response = self.client.delete(URL + fake_ID + "/",
+        response = self.client.update(URL_ONE_TEMPL.format(fake_ID),
                                        data=json.dumps(self.valid_instance),
                                        content_type='application/json'
                                        )
@@ -124,14 +124,14 @@ class DeletePlanetTest(APITestCase):
 
     def test_inexist_delete_planet(self):
         fake_ID = "999"
-        response = self.client.delete(URL + fake_ID + "/")
+        response = self.client.delete(URL_ONE_TEMPL.format(fake_ID))
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_delete_planet(self):
-        response = self.client.delete(URL + str(self.planetTest.id) + "/")
+        response = self.client.delete(URL_ONE_TEMPL.format(self.planetTest.id))
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
     def test_already_deleted_planet(self):
-        self.client.delete(URL + str(self.planetTest.id) + "/")
-        response = self.client.delete(URL + str(self.planetTest.id) + "/")
+        self.client.delete(URL_ONE_TEMPL.format(self.planetTest.id))
+        response = self.client.delete(URL_ONE_TEMPL.format(self.planetTest.id))
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

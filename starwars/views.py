@@ -15,8 +15,7 @@ class PlanetList(APIView):
 
         # modify(add, change) data comming from the database
         planetAux = PlanetTransformData()
-        for i in range(len(serializer.data)):
-            aux_dict = serializer.data[i]
+        for i, aux_dict in enumerate(serializer.data):
             serializer.data[i] = planetAux.transform(aux_dict)
 
         return Response(serializer.data)

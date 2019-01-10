@@ -10,6 +10,11 @@ import requests
 class PlanetList(APIView):
     def get(self, request, format=None):
         planets = Planet.objects.all()
+
+        # check filter
+        if "search" in request.query_params:
+            planets = self.planet_by_name(request, planets)
+
         # turn into primitive python object
         serializer = PlanetSerializer(planets, many=True)
 
@@ -26,6 +31,10 @@ class PlanetList(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def planet_by_name(self, request, planets):
+        return planets.filter(name__icontains=request.query_params["search"])
+
 
 class PlanetDetail(APIView):
     def get_object(self, pk):

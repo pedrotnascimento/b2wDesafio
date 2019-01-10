@@ -7,18 +7,19 @@ import json
 
 URL = '/planets/'
 URL_ONE_TEMPL = URL + '{id}/'
+URL_SEARCH = URL + "?search={s}"
 
 
 class PlanetModelTests(APITestCase):
     def setUp(self):
         self.alderaan = Planet.objects.create(
             name='Alderaan', terrain="grasslands, mountains", climate='temperate')
-        Planet.objects.create(
+        self.hoth = Planet.objects.create(
             name='Hoth', terrain="tundra, ice caves, mountain ranges", climate='frozen')
-        Planet.objects.create(
+        self.morty = Planet.objects.create(
             name='Morty', terrain="florest", climate='hot')
         Planet.objects.create(
-            name='Ricky', terrain='swamp', climate='any')
+            name='Rick', terrain='swamp', climate='any')
 
     def test_get_all_planets(self):
         # get API response
@@ -37,13 +38,27 @@ class PlanetModelTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_get_one_planet(self):
-        response = self.client.get(URL_ONE_TEMPL.format(self.alderaan.id))
+        response = self.client.get(URL_ONE_TEMPL.format(id=self.alderaan.id))
         self.assertEqual(response.data["id"], self.alderaan.id)
 
     def test_inexist_planet(self):
         fake_ID = "999"
-        response = self.client.get(URL_ONE_TEMPL.format(fake_ID))
+        response = self.client.get(URL_ONE_TEMPL.format(id=fake_ID))
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_get_searched_planet(self):
+        response = self.client.get(URL + "?search=alderaan") # URL_SEARCH.format(s="aldera"))
+        # self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["id"], self.alderaan.id)
+
+    def test_get_multiple_searched_planets(self):
+        response = self.client.get(URL_SEARCH.format(s="o"))
+        self.assertTrue(len(response.data) > 1)
+
+        #checking if all instance in    response has the "o" in their name
+        for i in response.data:
+            if "o" not in i["name"]:
+                self.assertTrue(False)
 
 
 class CreateNewPlanetTest(APITestCase):
@@ -94,14 +109,14 @@ class UpdatePlanetTest(APITestCase):
         }
 
     def test_valid_update_planet(self):
-        response = self.client.put(URL_ONE_TEMPL.format(self.planetTest.id),
+        response = self.client.put(URL_ONE_TEMPL.format(id=self.planetTest.id),
                                    data=json.dumps(self.valid_instance),
                                    content_type='application/json'
                                    )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_invalid_update_planet(self):
-        response = self.client.put(URL_ONE_TEMPL.format(self.planetTest.id),
+        response = self.client.put(URL_ONE_TEMPL.format(id=self.planetTest.id),
                                    data=json.dumps(self.invalid_instance),
                                    content_type='application/json'
                                    )
@@ -109,7 +124,7 @@ class UpdatePlanetTest(APITestCase):
 
     def test_inexist_update_planet(self):
         fake_ID = "999"
-        response = self.client.update(URL_ONE_TEMPL.format(fake_ID),
+        response = self.client.put(URL_ONE_TEMPL.format(id=fake_ID),
                                        data=json.dumps(self.valid_instance),
                                        content_type='application/json'
                                        )
@@ -124,14 +139,14 @@ class DeletePlanetTest(APITestCase):
 
     def test_inexist_delete_planet(self):
         fake_ID = "999"
-        response = self.client.delete(URL_ONE_TEMPL.format(fake_ID))
+        response = self.client.delete(URL_ONE_TEMPL.format(id=fake_ID))
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_delete_planet(self):
-        response = self.client.delete(URL_ONE_TEMPL.format(self.planetTest.id))
+        response = self.client.delete(URL_ONE_TEMPL.format(id=self.planetTest.id))
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
     def test_already_deleted_planet(self):
-        self.client.delete(URL_ONE_TEMPL.format(self.planetTest.id))
-        response = self.client.delete(URL_ONE_TEMPL.format(self.planetTest.id))
+        self.client.delete(URL_ONE_TEMPL.format(id=self.planetTest.id))
+        response = self.client.delete(URL_ONE_TEMPL.format(id=self.planetTest.id))
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

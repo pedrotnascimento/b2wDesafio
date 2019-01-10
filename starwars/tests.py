@@ -2,15 +2,17 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 from starwars.models import Planet
 from starwars.serializers import PlanetSerializer
-from starwars.views import PlanetTransformData
+from starwars.views import PlanetTransformData, PlanetList
 import json
 
 URL = '/planets/'
 URL_ONE_TEMPL = URL + '{id}/'
 URL_SEARCH = URL + "?search={s}"
+URL_PAGE = URL + "?page={p}"
+URL_PAGE_COUNT = URL_PAGE + "&count={c}"
 
 
-class PlanetModelTests(APITestCase):
+class PlanetGetTests(APITestCase):
     def setUp(self):
         self.alderaan = Planet.objects.create(
             name='Alderaan', terrain="grasslands, mountains", climate='temperate')
@@ -29,7 +31,6 @@ class PlanetModelTests(APITestCase):
         planets = Planet.objects.all()
         serializer = PlanetSerializer(planets, many=True)
 
-        # modify(add, change) data comming from the database
         planetAux = PlanetTransformData()
         for i, aux_dict in enumerate(serializer.data):
             serializer.data[i] = planetAux.transform(aux_dict)
@@ -48,7 +49,7 @@ class PlanetModelTests(APITestCase):
 
     def test_get_searched_planet(self):
         response = self.client.get(URL + "?search=alderaan") # URL_SEARCH.format(s="aldera"))
-        # self.assertEqual(len(response.data), 1)
+        self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["id"], self.alderaan.id)
 
     def test_get_multiple_searched_planets(self):
@@ -59,6 +60,47 @@ class PlanetModelTests(APITestCase):
         for i in response.data:
             if "o" not in i["name"]:
                 self.assertTrue(False)
+
+    def test_page_1(self):
+        planets = Planet.objects.all()[:PlanetList.PAGINATION_COUNT]
+        serializer = PlanetSerializer(planets, many=True)
+
+        planetAux = PlanetTransformData()
+        for i, aux_dict in enumerate(serializer.data):
+            serializer.data[i] = planetAux.transform(aux_dict)
+
+        response = self.client.get(URL_PAGE.format(p=1))
+        self.assertEqual(len(response.data), len(serializer.data))
+        self.assertEqual(response.data, serializer.data)
+
+    def test_page_count(self):
+        new_page_count = 2
+        page = 1
+        planets = Planet.objects.all()[:new_page_count]
+        serializer = PlanetSerializer(planets, many=True)
+
+        planetAux = PlanetTransformData()
+        for i, aux_dict in enumerate(serializer.data):
+            serializer.data[i] = planetAux.transform(aux_dict)
+
+
+        response = self.client.get(URL_PAGE_COUNT.format(p=page, c=new_page_count))
+        self.assertEqual(len(response.data), len(serializer.data))
+        self.assertEqual(response.data, serializer.data)
+
+    def test_page_2_count(self):
+        new_page_count = 2
+        page = 2
+        planets = Planet.objects.all()[new_page_count:new_page_count*page]
+        serializer = PlanetSerializer(planets, many=True)
+
+        planetAux = PlanetTransformData()
+        for i, aux_dict in enumerate(serializer.data):
+            serializer.data[i] = planetAux.transform(aux_dict)
+
+        response = self.client.get(URL_PAGE_COUNT.format(p=page, c=new_page_count))
+        self.assertEqual(len(response.data), len(serializer.data))
+        self.assertEqual(response.data, serializer.data)
 
 
 class CreateNewPlanetTest(APITestCase):
@@ -150,3 +192,4 @@ class DeletePlanetTest(APITestCase):
         self.client.delete(URL_ONE_TEMPL.format(id=self.planetTest.id))
         response = self.client.delete(URL_ONE_TEMPL.format(id=self.planetTest.id))
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+

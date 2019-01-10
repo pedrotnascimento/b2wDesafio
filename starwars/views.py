@@ -3,17 +3,29 @@ from starwars.serializers import PlanetSerializer
 from django.http import Http404
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
-import requests
+from rest_framework import status, pagination
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger,InvalidPage
+import requests as requestsMod
 
 
 class PlanetList(APIView):
+    PAGE_ERR_MSG_LOW_0 = "Error: count argument must to be higher than 0"
+    PAGE_ERR_MSG_PASS_COUNT = "Error: passing count parameter"
+    PAGINATION_COUNT = 10
     def get(self, request, format=None):
         planets = Planet.objects.all()
 
         # check filter
         if "search" in request.query_params:
             planets = self.planet_by_name(request, planets)
+
+        if "page" in request.query_params:
+            if "count" in request.query_params:
+                self.set_count(request.query_params["count"])
+            try:
+                planets = self.get_pages(planets, request.query_params["page"])
+            except (EmptyPage, PageNotAnInteger, InvalidPage):
+                planets = self.get_pages(planets, 1)
 
         # turn into primitive python object
         serializer = PlanetSerializer(planets, many=True)
@@ -34,6 +46,18 @@ class PlanetList(APIView):
 
     def planet_by_name(self, request, planets):
         return planets.filter(name__icontains=request.query_params["search"])
+
+    def set_count(self, count):
+        try:
+            self.PAGINATION_COUNT = int(count)
+            if self.PAGINATION_COUNT <= 0:
+                return Response(self.PAGE_ERR_MSG_LOW_0)
+        except Exception:
+            return Response(self.PAGE_ERR_MSG_PASS_COUNT)
+
+    def get_pages(self, planets, page):
+        paginator = Paginator(planets, self.PAGINATION_COUNT)
+        return paginator.page(page)
 
 
 class PlanetDetail(APIView):
@@ -76,7 +100,7 @@ class PlanetTransformData:
         try:
             name = str(name)
             URL = "https://swapi.co/api/planets/?search=" + name
-            r = requests.get(url=URL)
+            r = requestsMod.get(url=URL)
             data = r.json()
             if data["count"] == 0:
                 return 0
@@ -87,3 +111,5 @@ class PlanetTransformData:
             return 0
         except Exception:
             return 0
+
+

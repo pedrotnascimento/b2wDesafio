@@ -9,8 +9,8 @@ import requests as requestsMod
 
 
 class PlanetList(APIView):
-    PAGE_ERR_MSG_LOW_0 = "Error: count argument must to be higher than 0"
-    PAGE_ERR_MSG_PASS_COUNT = "Error: passing count parameter"
+    PAGE_ERR_MSG_LOW_0 = "Error: count argument must to be integer higher than 0"
+    PAGE_ERR_MSG_COUNT_ARG = "Error: passing count parameter"
     PAGINATION_COUNT = 10
 
     def get(self, request, format=None):
@@ -21,12 +21,17 @@ class PlanetList(APIView):
             planets = self.planet_by_name(request, planets)
 
         if "page" in request.query_params:
-            if "count" in request.query_params:
-                self.set_count(request.query_params["count"])
             try:
+                if "count" in request.query_params:
+                    self.set_count(request.query_params["count"])
+
                 planets = self.get_pages(planets, request.query_params["page"])
-            except (EmptyPage, PageNotAnInteger, InvalidPage):
+            except EmptyPage:
                 planets = self.get_pages(planets, 1)
+            except InvalidPage as e:
+                return Response(str(e))
+            except PageNotAnInteger as e:
+                return Response(str(e))
 
         # turn into primitive python object
         serializer = PlanetSerializer(planets, many=True)
@@ -51,14 +56,17 @@ class PlanetList(APIView):
     def set_count(self, count):
         try:
             self.PAGINATION_COUNT = int(count)
-            if self.PAGINATION_COUNT <= 0:
-                return Response(self.PAGE_ERR_MSG_LOW_0)
         except Exception:
-            return Response(self.PAGE_ERR_MSG_PASS_COUNT)
+            raise PageNotAnInteger(self.PAGE_ERR_MSG_COUNT_ARG)
+
+        if self.PAGINATION_COUNT <= 0:
+            raise InvalidPage(self.PAGE_ERR_MSG_LOW_0)
+
 
     def get_pages(self, planets, page):
         paginator = Paginator(planets, self.PAGINATION_COUNT)
         return paginator.page(page)
+
 
 
 class PlanetDetail(APIView):

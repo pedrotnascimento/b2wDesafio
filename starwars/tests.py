@@ -13,7 +13,7 @@ URL_PAGE_COUNT = URL_PAGE + "&count={c}"
 
 
 class PlanetGetTests(APITestCase):
-    def set_up(self):
+    def setUp(self):
         self.alderaan = Planet.objects.create(
             name='Alderaan', terrain="grasslands, mountains", climate='temperate')
         self.hoth = Planet.objects.create(
@@ -48,7 +48,7 @@ class PlanetGetTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_get_searched_planet(self):
-        response = self.client.get(URL_SEARCH.format(s="aldera"))
+        response = self.client.get(URL_SEARCH.format(s="Alderaan"))
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["id"], self.alderaan.id)
 
@@ -105,7 +105,7 @@ class PlanetGetTests(APITestCase):
         page = 1
         err_page_count = "a"
         response = self.client.get(URL_PAGE_COUNT.format(p=page, c=err_page_count))
-        self.assertEqual(response.data, PlanetList.PAGE_ERR_MSG_PASS_COUNT)
+        self.assertEqual(response.data, PlanetList.PAGE_ERR_MSG_COUNT_ARG)
 
     def test_page_count_error_low_zero(self):
         page = 1
@@ -121,7 +121,7 @@ class PlanetGetTests(APITestCase):
 
 
 class CreateNewPlanetTest(APITestCase):
-    def set_up(self):
+    def setUp(self):
         self.valid_instance = {
             'name': 'Marte',
             'climate': 'hell de janeiro',
@@ -149,7 +149,7 @@ class CreateNewPlanetTest(APITestCase):
 
 
 class UpdatePlanetTest(APITestCase):
-    def set_up(self):
+    def setUp(self):
         self.planetTest = Planet.objects.create(
             name='Thanos',
             terrain="ok",
@@ -191,7 +191,7 @@ class UpdatePlanetTest(APITestCase):
 
 
 class DeletePlanetTest(APITestCase):
-    def set_up(self):
+    def setUp(self):
         self.planetTest = Planet.objects.create(
             name='Thanos',
             terrain="ok",

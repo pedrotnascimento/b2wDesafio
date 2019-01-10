@@ -3,6 +3,7 @@ from rest_framework.test import APITestCase
 from starwars.models import Planet
 from starwars.serializers import PlanetSerializer
 from starwars.views import PlanetTransformData, PlanetList
+import requests as reqs
 import json
 
 URL = '/planets/'
@@ -10,6 +11,19 @@ URL_ONE_TEMPL = URL + '{id}/'
 URL_SEARCH = URL + "?search={s}"
 URL_PAGE = URL + "?page={p}"
 URL_PAGE_COUNT = URL_PAGE + "&count={c}"
+
+
+class StarWarsAPITest(APITestCase):
+    def setUp(self):
+        self.alderaan = {"name": "Alderaan", "films_qnt": 2}
+        self.starwars_api = "https://swapi.co/api/planets/?search={planet}"
+
+    def test_get_planet(self):
+        res = reqs.get(url=self.starwars_api.format(planet=self.alderaan["name"]))
+        data = res.json()
+        self.assertEqual(data["count"], 1)
+        self.assertEqual(len(data["results"]), 1)
+        self.assertEqual(len(data["results"][0]["films"]), self.alderaan["films_qnt"])
 
 
 class PlanetGetTests(APITestCase):
@@ -139,6 +153,8 @@ class CreateNewPlanetTest(APITestCase):
                                     data=json.dumps(self.valid_instance),
                                     content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.valid_instance["id"] = response.data["id"]
+        self.assertEqual(response.data, self.valid_instance)
 
     def test_create_invalid_planet(self):
         response = self.client.post(URL,

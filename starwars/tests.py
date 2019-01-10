@@ -2,6 +2,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 from starwars.models import Planet
 from starwars.serializers import PlanetSerializer
+from starwars.views import PlanetTransformData
 import json
 
 URL = '/planets/'
@@ -25,6 +26,12 @@ class PlanetModelTests(APITestCase):
         # get data from db
         planets = Planet.objects.all()
         serializer = PlanetSerializer(planets, many=True)
+
+        # modify(add, change) data comming from the database
+        planetAux = PlanetTransformData()
+        for i in range(len(serializer.data)):
+            aux_dict = serializer.data[i]
+            serializer.data[i] = planetAux.transform(aux_dict)
 
         self.assertEqual(response.data, serializer.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)

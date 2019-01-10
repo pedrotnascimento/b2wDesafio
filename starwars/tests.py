@@ -13,7 +13,7 @@ URL_PAGE_COUNT = URL_PAGE + "&count={c}"
 
 
 class PlanetGetTests(APITestCase):
-    def setUp(self):
+    def set_up(self):
         self.alderaan = Planet.objects.create(
             name='Alderaan', terrain="grasslands, mountains", climate='temperate')
         self.hoth = Planet.objects.create(
@@ -31,9 +31,9 @@ class PlanetGetTests(APITestCase):
         planets = Planet.objects.all()
         serializer = PlanetSerializer(planets, many=True)
 
-        planetAux = PlanetTransformData()
+        planet_aux = PlanetTransformData()
         for i, aux_dict in enumerate(serializer.data):
-            serializer.data[i] = planetAux.transform(aux_dict)
+            serializer.data[i] = planet_aux.transform(aux_dict)
 
         self.assertEqual(response.data, serializer.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -42,13 +42,13 @@ class PlanetGetTests(APITestCase):
         response = self.client.get(URL_ONE_TEMPL.format(id=self.alderaan.id))
         self.assertEqual(response.data["id"], self.alderaan.id)
 
-    def test_inexist_planet(self):
-        fake_ID = "999"
-        response = self.client.get(URL_ONE_TEMPL.format(id=fake_ID))
+    def test_not_exist_planet(self):
+        fake_id = "999"
+        response = self.client.get(URL_ONE_TEMPL.format(id=fake_id))
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_get_searched_planet(self):
-        response = self.client.get(URL + "?search=alderaan") # URL_SEARCH.format(s="aldera"))
+        response = self.client.get(URL_SEARCH.format(s="aldera"))
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["id"], self.alderaan.id)
 
@@ -56,7 +56,7 @@ class PlanetGetTests(APITestCase):
         response = self.client.get(URL_SEARCH.format(s="o"))
         self.assertTrue(len(response.data) > 1)
 
-        #checking if all instance in    response has the "o" in their name
+        # checking if all instance in response has the "o" in their name
         for i in response.data:
             if "o" not in i["name"]:
                 self.assertTrue(False)
@@ -65,9 +65,9 @@ class PlanetGetTests(APITestCase):
         planets = Planet.objects.all()[:PlanetList.PAGINATION_COUNT]
         serializer = PlanetSerializer(planets, many=True)
 
-        planetAux = PlanetTransformData()
+        planet_aux = PlanetTransformData()
         for i, aux_dict in enumerate(serializer.data):
-            serializer.data[i] = planetAux.transform(aux_dict)
+            serializer.data[i] = planet_aux.transform(aux_dict)
 
         response = self.client.get(URL_PAGE.format(p=1))
         self.assertEqual(len(response.data), len(serializer.data))
@@ -79,10 +79,9 @@ class PlanetGetTests(APITestCase):
         planets = Planet.objects.all()[:new_page_count]
         serializer = PlanetSerializer(planets, many=True)
 
-        planetAux = PlanetTransformData()
+        planet_aux = PlanetTransformData()
         for i, aux_dict in enumerate(serializer.data):
-            serializer.data[i] = planetAux.transform(aux_dict)
-
+            serializer.data[i] = planet_aux.transform(aux_dict)
 
         response = self.client.get(URL_PAGE_COUNT.format(p=page, c=new_page_count))
         self.assertEqual(len(response.data), len(serializer.data))
@@ -94,17 +93,35 @@ class PlanetGetTests(APITestCase):
         planets = Planet.objects.all()[new_page_count:new_page_count*page]
         serializer = PlanetSerializer(planets, many=True)
 
-        planetAux = PlanetTransformData()
+        planet_aux = PlanetTransformData()
         for i, aux_dict in enumerate(serializer.data):
-            serializer.data[i] = planetAux.transform(aux_dict)
+            serializer.data[i] = planet_aux.transform(aux_dict)
 
         response = self.client.get(URL_PAGE_COUNT.format(p=page, c=new_page_count))
         self.assertEqual(len(response.data), len(serializer.data))
         self.assertEqual(response.data, serializer.data)
 
+    def test_page_count_error_param(self):
+        page = 1
+        err_page_count = "a"
+        response = self.client.get(URL_PAGE_COUNT.format(p=page, c=err_page_count))
+        self.assertEqual(response.data, PlanetList.PAGE_ERR_MSG_PASS_COUNT)
+
+    def test_page_count_error_low_zero(self):
+        page = 1
+        err_page_count = -1
+        response = self.client.get(URL_PAGE_COUNT.format(p=page, c=err_page_count))
+        self.assertEqual(response.data, PlanetList.PAGE_ERR_MSG_LOW_0)
+
+    def test_page_count_error_low_zero_2(self):
+        page = 1
+        err_page_count = 0
+        response = self.client.get(URL_PAGE_COUNT.format(p=page, c=err_page_count))
+        self.assertEqual(response.data, PlanetList.PAGE_ERR_MSG_LOW_0)
+
 
 class CreateNewPlanetTest(APITestCase):
-    def setUp(self):
+    def set_up(self):
         self.valid_instance = {
             'name': 'Marte',
             'climate': 'hell de janeiro',
@@ -132,7 +149,7 @@ class CreateNewPlanetTest(APITestCase):
 
 
 class UpdatePlanetTest(APITestCase):
-    def setUp(self):
+    def set_up(self):
         self.planetTest = Planet.objects.create(
             name='Thanos',
             terrain="ok",
@@ -164,24 +181,25 @@ class UpdatePlanetTest(APITestCase):
                                    )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_inexist_update_planet(self):
-        fake_ID = "999"
-        response = self.client.put(URL_ONE_TEMPL.format(id=fake_ID),
+    def test_not_exist_update_planet(self):
+        fake_id = "999"
+        response = self.client.put(URL_ONE_TEMPL.format(id=fake_id),
                                        data=json.dumps(self.valid_instance),
                                        content_type='application/json'
                                        )
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
+
 class DeletePlanetTest(APITestCase):
-    def setUp(self):
+    def set_up(self):
         self.planetTest = Planet.objects.create(
             name='Thanos',
             terrain="ok",
             climate='ok22')
 
-    def test_inexist_delete_planet(self):
-        fake_ID = "999"
-        response = self.client.delete(URL_ONE_TEMPL.format(id=fake_ID))
+    def test_not_exist_delete_planet(self):
+        fake_id = "999"
+        response = self.client.delete(URL_ONE_TEMPL.format(id=fake_id))
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_delete_planet(self):
@@ -192,4 +210,3 @@ class DeletePlanetTest(APITestCase):
         self.client.delete(URL_ONE_TEMPL.format(id=self.planetTest.id))
         response = self.client.delete(URL_ONE_TEMPL.format(id=self.planetTest.id))
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-

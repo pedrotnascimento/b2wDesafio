@@ -3,8 +3,8 @@ from starwars.serializers import PlanetSerializer
 from django.http import Http404
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status, pagination
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger,InvalidPage
+from rest_framework import status
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger, InvalidPage
 import requests as requestsMod
 
 
@@ -12,6 +12,7 @@ class PlanetList(APIView):
     PAGE_ERR_MSG_LOW_0 = "Error: count argument must to be higher than 0"
     PAGE_ERR_MSG_PASS_COUNT = "Error: passing count parameter"
     PAGINATION_COUNT = 10
+
     def get(self, request, format=None):
         planets = Planet.objects.all()
 
@@ -111,5 +112,3 @@ class PlanetTransformData:
             return 0
         except Exception:
             return 0
-
-

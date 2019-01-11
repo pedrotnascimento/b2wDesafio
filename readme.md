@@ -9,7 +9,7 @@ Clima
 Terreno
 - Para cada planeta também devemos ter a quantidade de aparições em filmes, que podem ser obtidas pela API pública do [Star Wars](https://swapi.co/):
 
-#####Funcionalidades desejadas:
+##### Funcionalidades desejadas:
 
 - Adicionar um planeta (com nome, clima e terreno)
 - Listar planetas
@@ -88,7 +88,7 @@ Exemplo:
 ##### Criar um novo planeta:
 > POST: localhost:8000/planets/
 
-JSON:
+INPUT JSON:
 
     {
     "name": "nome-planeta",
@@ -100,7 +100,7 @@ JSON:
 ##### Atualizar um Planeta:
 > PUT: localhost:8000/planets/id-do-planeta/
 
-JSON:
+INPUT JSON:
 
     {
     "name": "nome-planeta",
@@ -114,7 +114,7 @@ JSON:
 
 
 ##### Paginar quantidade de planetas
-> GET: localhost:8000/planets/?page=<numero-da-pagina>[&count=quantidade-por-pagina]
+> GET: localhost:8000/planets/?page=numero-da-pagina[&count=quantidade-por-pagina]
 
 * o parametro count é opcional
 * O resultado é uma lista de planetas, assim como um get sem filtros.
@@ -131,7 +131,7 @@ Exemplo:
 
 
 ##### Pesquisar planeta pelo nome
-> GET: localhost:8000/planets/?search=<nome-planeta>
+> GET: localhost:8000/planets/?search=nome-planeta
 
 * A pesquisa é _case-insensitive_. 
 * Para pesquisa que contém parte do nome, a api irá buscar todos os resultados que contém este nome.

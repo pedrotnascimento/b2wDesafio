@@ -9,17 +9,19 @@ import requests as requestsMod
 
 
 class PlanetList(APIView):
-    PAGE_ERR_MSG_LOW_0 = "Error: count argument must to be integer higher than 0"
-    PAGE_ERR_MSG_COUNT_ARG = "Error: passing count parameter"
     PAGINATION_COUNT = 10
+    # useful in test checking
+    PAGE_ERR_MSG_COUNT_ARG = "Error: passing count parameter"
+    PAGE_ERR_MSG_LOW_0 = "Error: count argument must to be integer higher than 0"
 
     def get(self, request, format=None):
         planets = Planet.objects.all()
 
-        # check filter
+        # check search filter
         if "search" in request.query_params:
             planets = self.planet_by_name(request, planets)
 
+        # check pagination
         if "page" in request.query_params:
             try:
                 if "count" in request.query_params:
@@ -54,6 +56,13 @@ class PlanetList(APIView):
         return planets.filter(name__icontains=request.query_params["search"])
 
     def set_count(self, count):
+        """
+        method used for seting and validating the count param
+        the count param changes PAGINATION_COUNT which control the 
+        quantity of instances comming in one page
+         
+        :param count: set count used for pagination 
+        """
         try:
             self.PAGINATION_COUNT = int(count)
         except Exception:
@@ -61,7 +70,6 @@ class PlanetList(APIView):
 
         if self.PAGINATION_COUNT <= 0:
             raise InvalidPage(self.PAGE_ERR_MSG_LOW_0)
-
 
     def get_pages(self, planets, page):
         paginator = Paginator(planets, self.PAGINATION_COUNT)
@@ -97,9 +105,19 @@ class PlanetDetail(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class PlanetTransformData:
+
+class PlanetTransformData:    
     def transform(self, obj):
+        """
+        method for change the raw obj comming from database
+
+        :param obj: raw object comming from database which will be customized 
+        for any purpose  
+        """
         self.set_number_appearance(obj, obj["name"])
+
+        # put yours further changes here..
+
         return obj
 
     def set_number_appearance(self, obj, planet_name):

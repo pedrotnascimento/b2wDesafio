@@ -13,6 +13,9 @@ URL_PAGE = URL + "?page={p}"
 URL_PAGE_COUNT = URL_PAGE + "&count={c}"
 
 
+# setting mock data to True
+PlanetTransformData.mock = True
+
 class StarWarsAPITest(APITestCase):
     def setUp(self):
         self.alderaan = {"name": "Alderaan", "films_qnt": 2}
@@ -37,17 +40,19 @@ class PlanetGetTests(APITestCase):
         Planet.objects.create(
             name='Rick', terrain='swamp', climate='any')
 
+
     def test_get_all_planets(self):
+        # self.client.set_transform_data(StarWarsMockAPI)
         # get API response
+        # self.client.IplanetAux = StarWarsMockAPI.api_number_appearance
         response = self.client.get(URL)
 
         # get data from db
         planets = Planet.objects.all()
         serializer = PlanetSerializer(planets, many=True)
 
-        planet_aux = PlanetTransformData()
         for i, aux_dict in enumerate(serializer.data):
-            serializer.data[i] = planet_aux.transform(aux_dict)
+            serializer.data[i] = PlanetTransformData().transform(aux_dict)
 
         self.assertEqual(response.data, serializer.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -79,9 +84,8 @@ class PlanetGetTests(APITestCase):
         planets = Planet.objects.all()[:PlanetList.PAGINATION_COUNT]
         serializer = PlanetSerializer(planets, many=True)
 
-        planet_aux = PlanetTransformData()
         for i, aux_dict in enumerate(serializer.data):
-            serializer.data[i] = planet_aux.transform(aux_dict)
+            serializer.data[i] = PlanetTransformData().transform(aux_dict)
 
         response = self.client.get(URL_PAGE.format(p=1))
         self.assertEqual(len(response.data), len(serializer.data))
@@ -93,9 +97,8 @@ class PlanetGetTests(APITestCase):
         planets = Planet.objects.all()[:new_page_count]
         serializer = PlanetSerializer(planets, many=True)
 
-        planet_aux = PlanetTransformData()
         for i, aux_dict in enumerate(serializer.data):
-            serializer.data[i] = planet_aux.transform(aux_dict)
+            serializer.data[i] = PlanetTransformData().transform(aux_dict)
 
         response = self.client.get(URL_PAGE_COUNT.format(p=page, c=new_page_count))
         self.assertEqual(len(response.data), len(serializer.data))
@@ -107,9 +110,8 @@ class PlanetGetTests(APITestCase):
         planets = Planet.objects.all()[new_page_count:new_page_count*page]
         serializer = PlanetSerializer(planets, many=True)
 
-        planet_aux = PlanetTransformData()
         for i, aux_dict in enumerate(serializer.data):
-            serializer.data[i] = planet_aux.transform(aux_dict)
+            serializer.data[i] = PlanetTransformData().transform(aux_dict)
 
         response = self.client.get(URL_PAGE_COUNT.format(p=page, c=new_page_count))
         self.assertEqual(len(response.data), len(serializer.data))

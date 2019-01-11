@@ -8,6 +8,51 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger, Invali
 import requests as requestsMod
 
 
+class PlanetTransformData():
+    # static variable for control data response in test ambient
+    mock = False
+    def transform(self, obj):
+        """
+        method for change the raw obj comming from database
+
+        :param obj: raw object comming from database which will be customized
+        for any purpose
+        :returns: the changed obj
+        """
+        self.set_number_appearance(obj, obj["name"])
+
+        # put yours further changes here..
+
+        return obj
+
+    def set_number_appearance(self, obj, planet_name):
+        obj["appearance_qnt"] = self.api_number_appearance(planet_name)
+
+    def api_number_appearance(self, name):
+        if not self.mock:
+            try:
+                name = str(name)
+                URL = "https://swapi.co/api/planets/?search=" + name
+                r = requestsMod.get(url=URL)
+                data = r.json()
+                if data["count"] == 0:
+                    return 0
+                for p in data["results"]:
+                    if str(p["name"]).lower() == name.lower():
+                        tam = len(p["films"])
+                        return tam
+                return 0
+            except Exception:
+                return 0
+        else:
+            api = {'Alderaan': 1,
+                   'Hoth': 2,
+                   'Morty': 3,
+                   'Rick': 4}
+
+            return api[name]
+
+
 class PlanetList(APIView):
     PAGINATION_COUNT = 10
     # useful in test checking
@@ -39,9 +84,8 @@ class PlanetList(APIView):
         serializer = PlanetSerializer(planets, many=True)
 
         # modify(add, change) data comming from the database
-        planetAux = PlanetTransformData()
         for i, aux_dict in enumerate(serializer.data):
-            serializer.data[i] = planetAux.transform(aux_dict)
+            serializer.data[i] = self.transform(aux_dict)
 
         return Response(serializer.data)
 
@@ -75,6 +119,8 @@ class PlanetList(APIView):
         paginator = Paginator(planets, self.PAGINATION_COUNT)
         return paginator.page(page)
 
+    def transform(self, dict):
+        return PlanetTransformData().transform(dict)
 
 
 class PlanetDetail(APIView):
@@ -88,8 +134,7 @@ class PlanetDetail(APIView):
     def get(self, request, pk, format=None):
         planet = self.get_object(pk)
         serializer = PlanetSerializer(planet)
-        planetAux = PlanetTransformData()
-        return Response(planetAux.transform(serializer.data))
+        return Response(PlanetTransformData().transform(serializer.data))
 
     def put(self, request, pk, format=None):
         planet = self.get_object(pk)
@@ -103,38 +148,3 @@ class PlanetDetail(APIView):
         planet = self.get_object(pk)
         planet.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-
-class PlanetTransformData:    
-    def transform(self, obj):
-        """
-        method for change the raw obj comming from database
-
-        :param obj: raw object comming from database which will be customized 
-        for any purpose  
-        """
-        self.set_number_appearance(obj, obj["name"])
-
-        # put yours further changes here..
-
-        return obj
-
-    def set_number_appearance(self, obj, planet_name):
-        obj["appearance_qnt"] = self.api_number_appearance(planet_name)
-
-    def api_number_appearance(self, name):
-        try:
-            name = str(name)
-            URL = "https://swapi.co/api/planets/?search=" + name
-            r = requestsMod.get(url=URL)
-            data = r.json()
-            if data["count"] == 0:
-                return 0
-            for p in data["results"]:
-                if str(p["name"]).lower() == name.lower():
-                    tam = len(p["films"])
-                    return tam
-            return 0
-        except Exception:
-            return 0

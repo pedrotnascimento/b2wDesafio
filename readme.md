@@ -26,7 +26,7 @@ E lembre-se! Um bom software é um software bem testado.
 
 - [Python](https://www.python.org/downloads/)  3.6.3 ou maior 
 - [MongoDB](https://www.mongodb.com/download-center)
-- recomendável o uso de [virtualenv] (https://pythonacademy.com.br/blog/python-e-virtualenv-como-programar-em-ambientes-virtuais)
+- recomendável o uso de [virtualenv](https://pythonacademy.com.br/blog/python-e-virtualenv-como-programar-em-ambientes-virtuais)
 - execute no terminal, na raiz do projeto
 
 > $ pip install -r requirements.txt
